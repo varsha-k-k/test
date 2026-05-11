@@ -104,15 +104,65 @@ function HotelPage() {
     }
   }, []);
 
-  const speak = (text) => {
-    if (!ttsEnabled || !synthRef.current || !text) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    utter.rate = 1;
-    synthRef.current.cancel();
-    synthRef.current.speak(utter);
-  };
+  // const speak = (text) => {
+  //   if (!ttsEnabled || !synthRef.current || !text) return;
+  //   const utter = new SpeechSynthesisUtterance(text);
+  //   utter.lang = "en-US";
+  //   utter.rate = 1;
+  //   synthRef.current.cancel();
+  //   synthRef.current.speak(utter);
+  // };
+const speak = (text, msgIndex) => {
+    if (!text || isSpeaking || !ttsEnabled) return;
+    if (!window.speechSynthesis) { console.warn("Speech synthesis not supported"); return; }
 
+    window.speechSynthesis.cancel(); // stop any current speech
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // 🚨 NEW: Attempt to find Malayalam, fallback to Indian English, then US
+    utterance.lang = "ml-IN"; 
+    const voices = window.speechSynthesis.getVoices();
+
+    const localVoice = 
+      voices.find(v => v.lang === "ml-IN") || // 1. Try exact Malayalam match
+      voices.find(v => v.lang === "en-IN" && /female|zira|hazel|susan|samantha|victoria/i.test(v.name)) || // 2. Try Indian English Female
+      voices.find(v => v.lang.startsWith("en")); // 3. Fallback
+
+    if (localVoice) {
+      utterance.voice = localVoice;
+      utterance.lang = localVoice.lang;
+    }
+
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    setIsSpeaking(true);
+    setSpeakingMsgIndex(msgIndex);
+    setSpokenWordIndex(0);
+
+    utterance.onboundary = (event) => {
+      if (event.name === "word") {
+        const spoken = text.slice(0, event.charIndex + event.charLength);
+        const wordIdx = spoken.trim().split(/\s+/).length - 1;
+        setSpokenWordIndex(wordIdx);
+      }
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setSpeakingMsgIndex(null);
+      setSpokenWordIndex(-1);
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      setSpeakingMsgIndex(null);
+      setSpokenWordIndex(-1);
+    };
+
+    // THIS IS THE LINE THAT ACTUALLY MAKES IT TALK!
+    window.speechSynthesis.speak(utterance);
+  };
   const renderStars = (value) => {
     const v = Math.round(value || 0);
     return (
@@ -321,11 +371,43 @@ function HotelPage() {
   // =====================
   // VOICE HELPERS
   // =====================
-  const startListening = () => {
+  // const startListening = () => {
+  //   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  //   if (!SpeechRecognition) { alert("Voice recognition is not supported in this browser. Please use Chrome."); return; }
+  //   const recognition = new SpeechRecognition();
+  //   recognition.lang = "en-US";
+  //   recognition.interimResults = true;
+  //   recognition.maxAlternatives = 1;
+  //   recognition.onstart = () => setIsListening(true);
+  //   recognition.onerror = () => setIsListening(false);
+  //   recognition.onresult = (event) => {
+  //     const transcript = Array.from(event.results)
+  //       .map(r => r[0].transcript)
+  //       .join("");
+  //     setChatInput(transcript);
+  //   };
+  //   // Auto-send when user stops speaking
+  //   recognition.onend = () => {
+  //     setIsListening(false);
+  //     setTimeout(() => {
+  //       // Use a ref-captured value so we can read the latest chatInput
+  //       setChatInput(prev => { 
+  //         if (prev.trim()) handleSendMessage(prev);
+  //         return prev;
+  //       });
+  //     }, 200);
+  //   };
+  //   recognition.start();
+  //   recognitionRef.current = recognition;
+  // };
+const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { alert("Voice recognition is not supported in this browser. Please use Chrome."); return; }
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    
+    // 🚨 THE FIX: Tell the microphone to listen for Malayalam!
+    recognition.lang = "ml-IN"; 
+    
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onstart = () => setIsListening(true);
@@ -336,21 +418,21 @@ function HotelPage() {
         .join("");
       setChatInput(transcript);
     };
+    
     // Auto-send when user stops speaking
     recognition.onend = () => {
       setIsListening(false);
       setTimeout(() => {
-        // Use a ref-captured value so we can read the latest chatInput
         setChatInput(prev => { 
           if (prev.trim()) handleSendMessage(prev);
           return prev;
         });
       }, 200);
     };
+    
     recognition.start();
     recognitionRef.current = recognition;
   };
-
   const stopListening = () => {
     recognitionRef.current?.stop();
     setIsListening(false);

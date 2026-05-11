@@ -302,12 +302,12 @@ useEffect(() => {
             ⚡ AI Pricing
           </button>
           
-          <button 
+          {/* <button 
             onClick={() => setShowProfileEdit((v) => !v)} 
             style={{...defaultNavStyle, backgroundColor: showProfileEdit ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.06)", borderColor: showProfileEdit ? "#10b981" : "rgba(255,255,255,0.12)", color: showProfileEdit ? "#10b981" : "#e5e7eb"}}
           >
             ✏️ {showProfileEdit ? "Hide Edit" : "Edit Hotel"}
-          </button>
+          </button> */}
 
           <button 
             onClick={() => navigate("/bookings")} 

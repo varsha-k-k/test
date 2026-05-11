@@ -199,39 +199,6 @@ export async function calculateOptimalPrice(db, hotelId, roomId, bookingDate) {
   }
 }
 
-// export async function getPricingRecommendations(db, hotelId, daysAhead = 7) {
-//   try {
-//     const recommendations = [];
-//     const roomsResult = await db.query(
-//       `SELECT room_id, room_type FROM rooms WHERE hotel_id = $1`,
-//       [hotelId]
-//     );
-
-//     for (const room of roomsResult.rows) {
-//       const today = new Date();
-//       for (let i = 0; i < daysAhead; i++) {
-//         const futureDate = new Date(today);
-//         futureDate.setDate(futureDate.getDate() + i);
-
-//         const pricing = await calculateOptimalPrice(db, hotelId, room.room_id, futureDate);
-
-//         // Only push if there is actually a reason to change the price!
-//         if (pricing.calculated_price !== pricing.base_price) {
-//             recommendations.push({
-//             room_id: room.room_id,
-//             room_type: room.room_type,
-//             date: futureDate.toISOString().split("T")[0],
-//             ...pricing,
-//             });
-//         }
-//       }
-//     }
-//     return recommendations;
-//   } catch (err) {
-//     console.error("Error in getPricingRecommendations:", err);
-//     throw err;
-//   }
-// }
 export async function getPricingRecommendations(db, hotelId, daysAhead = 7) {
   try {
     const recommendations = [];

@@ -61,12 +61,12 @@ function LandingPage() {
           >
             Explore Hotels
           </button>
-          <button 
+          {/* <button 
             onClick={() => navigate("/admin-login")} 
             style={{ ...ghostButton, padding: "10px 16px", borderColor: "#f87171", color: "#fecdd3" }}
           >
             Admin Login
-          </button>
+          </button> */}
           <button 
             onClick={() => navigate("/staff-login")} 
             style={{ ...ghostButton, padding: "10px 16px", borderColor: "var(--accent)", color: "var(--accent)" }}
@@ -98,12 +98,7 @@ function LandingPage() {
             >
               Register Hotel
             </button>
-            <button 
-              onClick={() => navigate("/search")} 
-              style={ghostButton}
-            >
-              Preview Guest Experience
-            </button>
+            
           </div>
         </div>
       </header>
