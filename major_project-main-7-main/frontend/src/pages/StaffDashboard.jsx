@@ -405,7 +405,7 @@ useEffect(() => {
                 <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>Remaining inventory right now</div>
               </div>
 
-              <div style={metricCardStyle}>
+              {/* <div style={metricCardStyle}>
                 <div style={metricLabelStyle}>💳 Payment Mix</div>
                 <div style={metricValueStyle}>{paymentMix.paidPct}% Paid</div>
                 <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>
@@ -416,7 +416,7 @@ useEffect(() => {
                     ⚠ {analytics.alerts.unpaid_arrivals_next3} unpaid arrivals in next 3 days
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
 
             {/* CHARTS SECTION */}

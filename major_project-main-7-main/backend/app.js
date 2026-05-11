@@ -1287,12 +1287,13 @@ app.get("/api/staff/analytics", verifyToken, async (req, res) => {
     const uniqueGuests = parseInt(guestMetrics.rows[0].unique_guests) || 0;
     const repeatGuestRate = confirmedCount > 0 ? (((confirmedCount - uniqueGuests) / confirmedCount) * 100).toFixed(1) : 0;
 
-    // 5️⃣ REVENUE BY ROOM TYPE
+   
+// 5️⃣ REVENUE BY ROOM TYPE
     const revenueByRoom = await db.query(
       `SELECT 
         r.room_type,
         COUNT(DISTINCT b.booking_id) as bookings,
-        COALESCE(SUM(r.price_per_night * COALESCE(b.number_of_rooms, 1)), 0) as revenue
+        COALESCE(SUM(CASE WHEN b.payment_status = 'paid' THEN r.price_per_night * COALESCE(b.number_of_rooms, 1) ELSE 0 END), 0) as revenue
        FROM bookings b
        JOIN rooms r ON b.room_id = r.room_id
        CROSS JOIN LATERAL generate_series(b.check_in_date, b.check_out_date - INTERVAL '1 day', INTERVAL '1 day') AS stay_date
@@ -1303,7 +1304,6 @@ app.get("/api/staff/analytics", verifyToken, async (req, res) => {
        ORDER BY revenue DESC`,
       [hotel_id, startDateStr, endDateExclusiveStr]
     );
-
     // 6️⃣ PEAK DAYS
     const peakDays = await db.query(
       `SELECT 
@@ -1328,12 +1328,13 @@ app.get("/api/staff/analytics", verifyToken, async (req, res) => {
       bookings: peakMap[d] || 0
     }));
 
+
     // 7️⃣ REVENUE & OCCUPANCY TREND (stay-date based)
     const revenueTrend = await db.query(
       `SELECT 
          TO_CHAR(stay_date, 'Mon DD') as date,
          stay_date::date as stay_key,
-         COALESCE(SUM(r.price_per_night * COALESCE(b.number_of_rooms, 1)), 0) as daily_revenue,
+         COALESCE(SUM(CASE WHEN b.payment_status = 'paid' THEN r.price_per_night * COALESCE(b.number_of_rooms, 1) ELSE 0 END), 0) as daily_revenue,
          COALESCE(SUM(COALESCE(b.number_of_rooms,1)),0) as occupied_rooms
        FROM bookings b
        JOIN rooms r ON b.room_id = r.room_id
@@ -1345,18 +1346,19 @@ app.get("/api/staff/analytics", verifyToken, async (req, res) => {
        ORDER BY stay_date ASC`,
       [hotel_id, startDateStr, endDateExclusiveStr]
     );
-
+   
     // 8️⃣ PREVIOUS PERIOD COMPARISON
     const prevMetrics = await db.query(
       `WITH stay_dates AS (
          SELECT r.price_per_night,
+                b.payment_status,
                 COALESCE(b.number_of_rooms, 1) AS rooms,
                 generate_series(b.check_in_date, b.check_out_date - INTERVAL '1 day', INTERVAL '1 day') AS stay_date
          FROM bookings b
          JOIN rooms r ON b.room_id = r.room_id
          WHERE b.hotel_id = $1 AND b.booking_status = 'confirmed'
        )
-       SELECT COALESCE(SUM(CASE WHEN stay_date >= $2 AND stay_date < $3 THEN price_per_night * rooms END), 0) as prev_revenue
+       SELECT COALESCE(SUM(CASE WHEN payment_status = 'paid' AND stay_date >= $2 AND stay_date < $3 THEN price_per_night * rooms END), 0) as prev_revenue
        FROM stay_dates`,
       [hotel_id, previousStartDateStr, startDateStr]
     );
@@ -1382,11 +1384,12 @@ app.get("/api/staff/analytics", verifyToken, async (req, res) => {
 
     // 1️⃣1️⃣ TOP ROOMS (revenue and cancellations)
     let topRoomsRows = [];
+  
     try {
       const tr = await db.query(
         `WITH stay_rev AS (
            SELECT r.room_type,
-                  COALESCE(SUM(r.price_per_night * COALESCE(b.number_of_rooms,1)),0) AS revenue,
+                  COALESCE(SUM(CASE WHEN b.payment_status = 'paid' THEN r.price_per_night * COALESCE(b.number_of_rooms,1) ELSE 0 END),0) AS revenue,
                   COUNT(DISTINCT b.booking_id) AS bookings
              FROM bookings b
              JOIN rooms r ON b.room_id = r.room_id
