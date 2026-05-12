@@ -802,7 +802,7 @@ useEffect(() => {
 
                     <div style={{ fontSize: "14px", color: "#4b5563", marginBottom: "20px", display: "flex", gap: "8px", alignItems: "flex-start" }}>
                       <span>💡</span>
-                      <span>{rec.reason || "Algorithm detected sudden demand spike for these dates."}</span>
+                      <span>{rec.reasons }</span>
                     </div>
 
                     <button 

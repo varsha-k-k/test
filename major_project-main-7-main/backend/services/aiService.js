@@ -86,6 +86,93 @@ async function fetchWithTimeout(url, options, timeoutMs = 6000) {
   }
 }
 
+// async function callLLM(query, hotelContext, attempt = 1, modelOverride = null) {
+//   if (!GROQ_API_KEY) return null;
+//   if (Date.now() < groqDisabledUntil) return null;
+
+//   const modelToUse = modelOverride || GROQ_MODEL;
+
+//   const hotelInfo = hotelContext
+//     ? `Hotel: ${hotelContext.hotel_name || "Unknown"} (${hotelContext.location || "Unknown"})`
+//     : "Hotel: (not provided)";
+
+//   const roomInfo = (hotelContext?.rooms || [])
+//     .map(r => `${r.type}: ₹${r.price}/night | Cap: ${r.capacity} | Features: ${r.amenities} | About: ${r.description} (${r.available} available)`)
+//     .join("\n");
+
+//   const datesInfo = hotelContext?.target_check_in
+//     ? `Dates: ${hotelContext.target_check_in || "N/A"} to ${hotelContext.target_check_out || "N/A"}`
+//     : "Dates: not selected";
+
+//   const descriptionInfo = hotelContext?.description ? `About: ${hotelContext.description}` : "";
+//   const addressInfo = hotelContext?.address ? `Location/Address: ${hotelContext.address}` : "";
+//   const mapsInfo = hotelContext?.google_maps ? `Google Maps: ${hotelContext.google_maps}` : "";
+//   const amenitiesInfo = hotelContext?.amenities ? `Amenities/Spots: ${hotelContext.amenities}` : "";
+//   const contactInfo = hotelContext?.contact ? `Contact: ${hotelContext.contact}` : "";
+
+//   const systemContext = `You are a concise, friendly hotel assistant. Use only the facts provided.
+// ${hotelInfo}
+// ${descriptionInfo}
+// ${addressInfo}
+// ${mapsInfo}
+// ${amenitiesInfo}
+// ${contactInfo}
+// ${datesInfo}
+// Rooms: ${roomInfo || "No room data"}
+
+// Keep answers short (1-3 sentences) and helpful. If a user asks about nearby spots, mention what's clearly described in the Info or Amenities. If they ask about "goodies", "facilities", or "features", explicitly list the Cap, Features, and About details of the available rooms. 
+// IMPORTANT: You must always reply in the exact same language the user uses. If the user asks a question in Malayalam (മലയാളം), you must reply in Malayalam.`;
+//   console.log("=== GROQ SYSTEM PROMPT ===\n", systemContext, "\n==========================");
+
+//   const body = {
+//     model: modelToUse,
+//     messages: [
+//       { role: "system", content: systemContext },
+//       { role: "user", content: query }
+//     ],
+//     max_tokens: 180,
+//     temperature: 0.5,
+//     top_p: 0.95
+//   };
+
+//   try {
+//     const apiUrl = `https://api.groq.com/openai/v1/chat/completions`;
+
+//     const resp = await fetchWithTimeout(apiUrl, {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${GROQ_API_KEY}`,
+//         "Content-Type": "application/json"
+//       },
+//       body: JSON.stringify(body)
+//     }, 6000);
+
+//     if (!resp.ok) {
+//       const text = await resp.text();
+//       console.error(`Groq API error ${resp.status}: ${text}`);
+
+//       if (attempt === 1 && GROQ_FALLBACK_MODEL) {
+//         console.warn(`Retrying with fallback model: ${GROQ_FALLBACK_MODEL}`);
+//         return await callLLM(query, hotelContext, attempt + 1, GROQ_FALLBACK_MODEL);
+//       }
+
+//       if (attempt >= 2) {
+//         groqDisabledUntil = Date.now() + GROQ_COOLDOWN_MS;
+//         console.warn(`Disabling Groq calls for 30 minutes due to repeated ${resp.status}`);
+//       }
+//       return null;
+//     }
+
+//     const data = await resp.json();
+//     let reply = data.choices?.[0]?.message?.content || "";
+//     if (!reply) return null;
+
+//     return { intent: "general_llm", response: reply };
+//   } catch (err) {
+//     console.error("Groq fetch failed:", err.message);
+//     return null;
+//   }
+// }
 async function callLLM(query, hotelContext, attempt = 1, modelOverride = null) {
   if (!GROQ_API_KEY) return null;
   if (Date.now() < groqDisabledUntil) return null;
@@ -119,9 +206,9 @@ ${amenitiesInfo}
 ${contactInfo}
 ${datesInfo}
 Rooms: ${roomInfo || "No room data"}
+Keep answers short (1-3 sentences) and helpful. If a user asks about nearby spots, mention what's clearly described in the Info or Amenities. If they ask about "goodies", "facilities", or "features", explicitly list the Cap, Features, and About details of the available rooms.
+IMPORTANT: You must strictly reply in English only. If the user speaks or asks a question in another language, politely reply in English.`;
 
-Keep answers short (1-3 sentences) and helpful. If a user asks about nearby spots, mention what's clearly described in the Info or Amenities. If they ask about "goodies", "facilities", or "features", explicitly list the Cap, Features, and About details of the available rooms. 
-IMPORTANT: You must always reply in the exact same language the user uses. If the user asks a question in Malayalam (മലയാളം), you must reply in Malayalam.`;
   console.log("=== GROQ SYSTEM PROMPT ===\n", systemContext, "\n==========================");
 
   const body = {
@@ -173,7 +260,6 @@ IMPORTANT: You must always reply in the exact same language the user uses. If th
     return null;
   }
 }
-
 
 export async function processGuestQuery(query, hotelContext, currentState = {}) {
   const text = query.toLowerCase().trim();

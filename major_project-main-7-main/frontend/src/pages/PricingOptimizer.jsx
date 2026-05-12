@@ -85,7 +85,8 @@ function PricingOptimizer() {
         <div>
           {recommendations.map((rec, idx) => {
             // Check state using the unique room + date key
-            const uniqueKey = `${rec.room_id}-${rec.date}`;
+            // const uniqueKey = `${rec.room_id}-${rec.date}`;
+            const uniqueKey = `${rec.room_id}-${rec.target_date}`;
             const isIgnored = ignoredPrices[uniqueKey];
             const isApplied = appliedPrices[uniqueKey];
 
@@ -107,7 +108,7 @@ function PricingOptimizer() {
                   <div>
                     <h3>{rec.room_type}</h3>
                     <p>
-                      <strong>Date:</strong> {rec.date}
+                      <strong>Date:</strong> {rec.target_date}
                     </p>
                     <p>
                       <strong>Base Price:</strong> ₹{rec.base_price}
@@ -152,7 +153,7 @@ function PricingOptimizer() {
                 <div style={{ marginTop: "15px", display: "flex", gap: "10px" }}>
                   <button
                     // TWEAK 5: Pass the target date to the handler
-                    onClick={() => handleApplyPrice(rec.room_id, rec.calculated_price, rec.date)}
+                    onClick={() => handleApplyPrice(rec.room_id, rec.calculated_price, rec.target_date)}
                     disabled={isApplied}
                     style={{
                       padding: "10px 20px",
@@ -168,7 +169,7 @@ function PricingOptimizer() {
                   </button>
 
                   <button
-                    onClick={() => handleIgnorePrice(rec.room_id, rec.date)}
+                    onClick={() => handleIgnorePrice(rec.room_id, rec.target_date)}
                     style={{
                       padding: "10px 20px",
                       backgroundColor: "#6c757d",

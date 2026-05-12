@@ -247,10 +247,7 @@ export async function applyRecommendedPrice(db, hotelId, roomId, targetDate, new
     );
 
     // Also update the base price so default views reflect the change immediately
-    await db.query(
-      `UPDATE rooms SET price_per_night = $1 WHERE hotel_id = $2 AND room_id = $3`,
-      [newPrice, hotelId, roomId]
-    );
+
 
     console.log(
       `✅ AI Price Override saved for Room ${roomId} on ${targetDate}: ₹${newPrice}`

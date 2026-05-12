@@ -406,7 +406,7 @@ const startListening = () => {
     const recognition = new SpeechRecognition();
     
     // 🚨 THE FIX: Tell the microphone to listen for Malayalam!
-    recognition.lang = "ml-IN"; 
+    recognition.lang = "en-US"; 
     
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
@@ -438,20 +438,71 @@ const startListening = () => {
     setIsListening(false);
   };
 
-  const speakText = (text, msgIndex) => {
+  // const speakText = (text, msgIndex) => {
+  //   if (!text || isSpeaking || !ttsEnabled) return;
+  //   if (!window.speechSynthesis) { console.warn("Speech synthesis not supported"); return; }
+
+  //   window.speechSynthesis.cancel(); // stop any current speech
+  //   const words = text.split(/\s+/);
+  //   const utterance = new SpeechSynthesisUtterance(text);
+
+  //   // Pick a female English voice if available
+  //   const voices = window.speechSynthesis.getVoices();
+  //   const femaleVoice = voices.find(v =>
+  //     v.lang.startsWith("en") && /female|zira|hazel|susan|samantha|victoria/i.test(v.name)
+  //   ) || voices.find(v => v.lang.startsWith("en"));
+  //   if (femaleVoice) utterance.voice = femaleVoice;
+  //   utterance.rate = 1.0;
+  //   utterance.pitch = 1.0;
+
+  //   setIsSpeaking(true);
+  //   setSpeakingMsgIndex(msgIndex);
+  //   setSpokenWordIndex(0);
+
+  //   utterance.onboundary = (event) => {
+  //     if (event.name === "word") {
+  //       // Count which word we're at by the char index
+  //       const spoken = text.slice(0, event.charIndex + event.charLength);
+  //       const wordIdx = spoken.trim().split(/\s+/).length - 1;
+  //       setSpokenWordIndex(wordIdx);
+  //     }
+  //   };
+
+  //   utterance.onend = () => {
+  //     setIsSpeaking(false);
+  //     setSpeakingMsgIndex(null);
+  //     setSpokenWordIndex(-1);
+  //   };
+
+  //   utterance.onerror = () => {
+  //     setIsSpeaking(false);
+  //     setSpeakingMsgIndex(null);
+  //     setSpokenWordIndex(-1);
+  //   };
+
+  //   window.speechSynthesis.speak(utterance);
+  // };
+const speakText = (text, msgIndex) => {
     if (!text || isSpeaking || !ttsEnabled) return;
     if (!window.speechSynthesis) { console.warn("Speech synthesis not supported"); return; }
 
-    window.speechSynthesis.cancel(); // stop any current speech
-    const words = text.split(/\s+/);
+    window.speechSynthesis.cancel(); 
     const utterance = new SpeechSynthesisUtterance(text);
 
-    // Pick a female English voice if available
+    // Force standard English
+    utterance.lang = "en-US"; 
     const voices = window.speechSynthesis.getVoices();
+
+    // Look for a standard female English voice
     const femaleVoice = voices.find(v =>
       v.lang.startsWith("en") && /female|zira|hazel|susan|samantha|victoria/i.test(v.name)
     ) || voices.find(v => v.lang.startsWith("en"));
-    if (femaleVoice) utterance.voice = femaleVoice;
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+      utterance.lang = femaleVoice.lang;
+    }
+
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
@@ -461,7 +512,6 @@ const startListening = () => {
 
     utterance.onboundary = (event) => {
       if (event.name === "word") {
-        // Count which word we're at by the char index
         const spoken = text.slice(0, event.charIndex + event.charLength);
         const wordIdx = spoken.trim().split(/\s+/).length - 1;
         setSpokenWordIndex(wordIdx);
@@ -482,7 +532,6 @@ const startListening = () => {
 
     window.speechSynthesis.speak(utterance);
   };
-
   const stopSpeaking = () => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
@@ -814,7 +863,7 @@ const startListening = () => {
                     <input type="tel" name="guestPhone" value={bookingDetails.guestPhone} onChange={handleInputChange} placeholder="+91 9876543210" style={{ ...inputStyle, width: "100%" }} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Upload ID / License (optional)</label>
+                    <label style={labelStyle}>Upload ID</label>
                     <input
                       type="file"
                       accept=".jpg,.jpeg,.png,.pdf"
